@@ -88,7 +88,12 @@ class JarvisAgent:
                 )
             )
 
-            return response.text
+            if response.candidates and response.candidates[0].content.parts:
+                for part in response.candidates[0].content.parts:
+                    if hasattr(part, 'text') and part.text:
+                        return part.text
+
+            return "Action completed"
 
         except Exception as e:
             return f"Error getting final response: {str(e)}"
