@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from typing import Optional
 
 from google.genai import types
 
@@ -19,16 +20,29 @@ class TerminalTool(BaseTool):
 
     @property
     def description(self) -> str:
-        return "Opens a new Konsole terminal window"
+        return "Opens a new Konsole terminal window. Can optionally execute a command in it"
 
     def get_function_declaration(self) -> types.FunctionDeclaration:
         return types.FunctionDeclaration(
             name=self.name,
             description=self.description,
-            parameters=types.Schema(type=types.Type.OBJECT, properties={})
+            parameters=types.Schema(
+                type=types.Type.OBJECT,
+                properties={
+                    "command": types.Schema(
+                        type=types.Type.STRING,
+                        description="Optional command to execute in the terminal (e.g., 'neofetch', 'htop', 'python3'"
+                    )
+                }
+            )
         )
 
-    def execute(self) -> str:
+    def execute(self, command: Optional[str] = None) -> str:
+        if command:
+            if self.executor.run_detached(['konsole', '-e', 'bash', '-c', f'{command}; exec bash']):
+                return f"Opening Konsole terminal and running: {command}"
+            return "Failed to open terminal"
+
         if self.executor.run_detached(['konsole']):
             return "Opening Konsole terminal"
         return "Failed to open terminal"
